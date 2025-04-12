@@ -63,7 +63,7 @@ class FirstConvBlk(nn.Module):
                     nn.Conv1d(1, outch, kernel_size=9, padding=4),
                     nn.LeakyReLU(negative_slope=0.3),
                     nn.MaxPool1d(4),
-                    nn.Dropout(0.2)
+                    # nn.Dropout(0.2)
                 ) for _ in range(input_shape[1])
                 ])
         def forward(self, x):
@@ -204,13 +204,13 @@ class SeEANet(nn.Module):
         self.atten1 = ImprovedBottleneck(ImproverFilter=ImproverFilter, kernel=9, e=128, groups=8, alpha=1.0)
         self.lrelu2 = nn.LeakyReLU(negative_slope=0.3)
         self.mpool1 = nn.MaxPool1d(kernel_size=3)
-        self.dp1 = nn.Dropout1d(0.2)
+        # self.dp1 = nn.Dropout1d(0.2)
         self.conv1 = nn.LazyConv1d(out_channels=64, kernel_size=1)
 
         self.lstm1 = nn.LSTM(input_size=64, hidden_size=64, num_layers=1, batch_first=True, bidirectional=True)
-        self.dp2 = nn.Dropout1d(0.2)
+        # self.dp2 = nn.Dropout1d(0.2)
         self.lstm2 = nn.LSTM(input_size=128, hidden_size=64, num_layers=1, batch_first=True, bidirectional=True)
-        self.dp3 = nn.Dropout1d(0.2)
+        # self.dp3 = nn.Dropout1d(0.2)
         self.l = nn.LazyLinear(PreLen*PreNum)
         
 
@@ -221,15 +221,15 @@ class SeEANet(nn.Module):
         x = self.atten1(x)
         x = self.lrelu2(x)
         x = self.mpool1(x)
-        x = self.dp1(x)
+        # x = self.dp1(x)
         x = self.conv1(x)
 
         x = x.permute(0, 2, 1)
         x,_ = self.lstm1(x)
-        x = self.dp2(x)
+        # x = self.dp2(x)
         x,_ = self.lstm2(x)
         x = x[:, -1, :]
-        x = self.dp3(x)
+        # x = self.dp3(x)
         y = self.l(x)
 
 

@@ -94,20 +94,24 @@ def make_datasets(data_Dir, peopleList, exp_class, cluster_num, fusionMethod, wi
     afterClusterEmgIndex = clusterMethod(cluster_num, correlationMatrix)
 
     # 数据融合
-    mergedEmgData = []
-    for i in afterClusterEmgIndex:
-        subEmgData = final_emg_data[:,np.array(i)-1]
-        if fusionMethod == "KPCA":
-            subMergedEmgData = KPCA_func(subEmgData)
 
-        elif fusionMethod == "PCA":
-            subMergedEmgData = PCA_func(subEmgData)
+    if fusionMethod != "NNWA":
+        mergedEmgData = []
+        for i in afterClusterEmgIndex:
+            subEmgData = final_emg_data[:,np.array(i)-1]
+            if fusionMethod == "KPCA":
+                subMergedEmgData = KPCA_func(subEmgData)
 
-        elif fusionMethod == "WA":
-            subMergedEmgData = WA_func(subEmgData)
-        
-        mergedEmgData.append(subMergedEmgData)
-    finalMergedEmgData = np.concatenate(mergedEmgData, axis=1)
+            elif fusionMethod == "PCA":
+                subMergedEmgData = PCA_func(subEmgData)
+
+            elif fusionMethod == "WA":
+                subMergedEmgData = WA_func(subEmgData)
+            
+            mergedEmgData.append(subMergedEmgData)
+        finalMergedEmgData = np.concatenate(mergedEmgData, axis=1)
+    else:
+        finalMergedEmgData = final_emg_data
 
     # 开始制作数据集
     Length = windowLength + delta_T # 单个数据长度
@@ -133,5 +137,5 @@ def make_datasets(data_Dir, peopleList, exp_class, cluster_num, fusionMethod, wi
     emg = np.array(emgList)
     angle = np.array(angleList)
     
-    return emg, angle
+    return emg, angle, afterClusterEmgIndex
 

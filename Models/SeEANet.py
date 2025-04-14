@@ -54,7 +54,7 @@ class HardSwish(nn.Module):
         return x * torch.clamp(F.relu(x + 3.0), max=6.0) / 6.0
     
 class FirstConvBlk(nn.Module):
-        def __init__(self, outch, input_shape = [256, 6]):
+        def __init__(self, outch, cluster_num):
             
             super(FirstConvBlk, self).__init__()        
             # Shallow feature extraction module
@@ -64,7 +64,7 @@ class FirstConvBlk(nn.Module):
                     nn.LeakyReLU(negative_slope=0.3),
                     nn.MaxPool1d(4),
                     # nn.Dropout(0.2)
-                ) for _ in range(input_shape[1])
+                ) for _ in range(cluster_num)
                 ])
         def forward(self, x):
             first_conv_outs = []
@@ -192,48 +192,41 @@ class ImprovedBottleneck(nn.Module):
         return y
 
 class SeEANet(nn.Module):
-    def __init__(self, PreLen=1, PreNum=1, input_shape = [256, 6]):
+    def __init__(self, PreNum=3, PreLen=1, cluster_num=6):
         super(SeEANet, self).__init__()
         firstFilter = 8
-        inceptionFilter = input_shape[1] * firstFilter
-        ImproverFilter = 4 * inceptionFilter
+        inceptionFilter = cluster_num * firstFilter
 
-        self.FirConv = FirstConvBlk(outch=firstFilter, input_shape=input_shape)
-        self.InceptionBlk = InceptionBlk(inch=inceptionFilter, outch=inceptionFilter)
+        self.FirConv = FirstConvBlk(outch=firstFilter, cluster_num=cluster_num)
+        self.InceptionBlk1 = InceptionBlk(inch=inceptionFilter, outch=inceptionFilter)
         self.lrelu1 = nn.LeakyReLU(negative_slope=0.3)
-        self.atten1 = ImprovedBottleneck(ImproverFilter=ImproverFilter, kernel=9, e=128, groups=8, alpha=1.0)
-        self.lrelu2 = nn.LeakyReLU(negative_slope=0.3)
+        
         self.mpool1 = nn.MaxPool1d(kernel_size=3)
-        # self.dp1 = nn.Dropout1d(0.2)
         self.conv1 = nn.LazyConv1d(out_channels=64, kernel_size=1)
 
-        self.lstm1 = nn.LSTM(input_size=64, hidden_size=64, num_layers=1, batch_first=True, bidirectional=True)
-        # self.dp2 = nn.Dropout1d(0.2)
-        self.lstm2 = nn.LSTM(input_size=128, hidden_size=64, num_layers=1, batch_first=True, bidirectional=True)
-        # self.dp3 = nn.Dropout1d(0.2)
-        self.l = nn.LazyLinear(PreLen*PreNum)
+        self.gru1 = nn.GRU(input_size=64, hidden_size=64, num_layers=1, batch_first=True, bidirectional=True)
+        self.gru2 = nn.GRU(input_size=128, hidden_size=64, num_layers=1, batch_first=True, bidirectional=True)
+        self.l0 = nn.LazyLinear(64)
+        self.relu1 = nn.ReLU()
+        self.l1 = nn.LazyLinear(PreLen*PreNum)
         
 
     def forward(self, x):
         x = self.FirConv(x)
-        x = self.InceptionBlk(x)
+        x = self.InceptionBlk1(x)
         x = self.lrelu1(x)
-        x = self.atten1(x)
-        x = self.lrelu2(x)
         x = self.mpool1(x)
-        # x = self.dp1(x)
         x = self.conv1(x)
-
         x = x.permute(0, 2, 1)
-        x,_ = self.lstm1(x)
-        # x = self.dp2(x)
-        x,_ = self.lstm2(x)
+        x,_ = self.gru1(x)
+        x,_ = self.gru2(x)
         x = x[:, -1, :]
-        # x = self.dp3(x)
-        y = self.l(x)
+        x = self.l0(x)
+        x = self.relu1(x)
+        x = self.l1(x)
 
 
-        return y
+        return x
     
 if __name__ == '__main__':
     model = SeEANet()

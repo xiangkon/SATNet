@@ -46,10 +46,43 @@ class InceptionBlk(nn.Module):
 
         return x
 
-    
+class NNWA(nn.Module):
+    def __init__(self, IndexL):
+        super(NNWA, self).__init__()  
+        self.l1 = nn.LazyLinear(1)
+        self.l2 = nn.LazyLinear(1)
+        self.l3 = nn.LazyLinear(1)
+        self.l4 = nn.LazyLinear(1)
+        self.l5 = nn.LazyLinear(1)
+        self.l6 = nn.LazyLinear(1)
+        modified_list = []
+        for row in IndexL:
+            new_row = [value - 1 for value in row]
+            modified_list.append(new_row)
+
+        self.IndexL = modified_list
+
+    def forward(self,x):
+        x1 = x[:, :, self.IndexL[0]]
+        x2 = x[:, :, self.IndexL[1]]
+        x3 = x[:, :, self.IndexL[2]]
+        x4 = x[:, :, self.IndexL[3]]
+        x5 = x[:, :, self.IndexL[4]]
+        x6 = x[:, :, self.IndexL[5]]
+
+        x1 = self.l1(x1)
+        x2 = self.l2(x2)
+        x3 = self.l3(x3)
+        x4 = self.l4(x4)
+        x5 = self.l5(x5)
+        x6 = self.l6(x6)
+
+        x = torch.cat([x1, x2, x3, x4, x5, x6], dim=2)
+        return x.permute(0,2,1)
+
+
 class FirstConvBlk(nn.Module):
         def __init__(self, outch, cluster_num):
-            
             super(FirstConvBlk, self).__init__()        
             # Shallow feature extraction module
             self.first_conv_blocks = nn.ModuleList([
@@ -116,12 +149,13 @@ class TransformerTimeSeries(nn.Module):
         # x = x.permute(1, 0, 2)
         return x
 
-class SATNet(nn.Module):
-    def __init__(self, PreNum=3, PreLen=1, cluster_num=6):
-        super(SATNet, self).__init__()
+class SATNet_N(nn.Module):
+    def __init__(self, PreNum=3, PreLen=1, cluster_num=6, IndexL=[[11, 12], [9, 10], [3], [4], [6, 8], [1, 2, 5, 7]]):
+        super(SATNet_N, self).__init__()
         self.scale = 48
         firstFilter = 8
         inceptionFilter = cluster_num * firstFilter
+        self.nnwa = NNWA(IndexL)
         self.FirConv = FirstConvBlk(outch=firstFilter, cluster_num=cluster_num)
         self.InceptionBlk1 = InceptionBlk(inch=inceptionFilter, outch=int(inceptionFilter/4))
         self.lrelu1 = nn.LeakyReLU(negative_slope=0.3)
@@ -130,6 +164,7 @@ class SATNet(nn.Module):
         
 
     def forward(self, x):
+        x = self.nnwa(x)
         x = self.FirConv(x)
         x = self.InceptionBlk1(x)
         x = self.lrelu1(x)
@@ -139,9 +174,9 @@ class SATNet(nn.Module):
         return x
     
 if __name__ == '__main__':
-    model = SATNet(PreNum=3)
+    model = SATNet_N(PreNum=3)
     model = model.cuda()
-    inputs = torch.randn(24, 6, 256)
+    inputs = torch.randn(24, 12, 256)
     inputs = inputs.cuda()
     outputs = model(inputs)
     print("outpus's shape :", outputs.shape)

@@ -25,7 +25,7 @@ def train_func(epochs=2000,modelName="SAT", train_num=5,
     peopleList=['S01'], exp_class="MJ",
     cluster_num=6, fusionMethod="PCA", 
     windowLength=256, stepLength=1, delta_T=20, train_ratio=0.8, PreNum=3,
-    formatted_time = '0'):
+    formatted_time = '0', batch_size = 512):
 
     if modelName == "SAT_N":
         fusionMethod = "NNWA"
@@ -58,8 +58,8 @@ def train_func(epochs=2000,modelName="SAT", train_num=5,
         # 数据集分割
         train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
         # 数据加载
-        train_loader = DataLoader(train_dataset, batch_size=256, shuffle=True)
-        test_loader = DataLoader(test_dataset, batch_size=256, shuffle=False)
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
         if emg_data.shape[1] == 6:
             # 初始化模型、优化器和损失函数

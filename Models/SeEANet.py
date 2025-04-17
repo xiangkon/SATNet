@@ -206,8 +206,8 @@ class SeEANet(nn.Module):
 
         self.gru1 = nn.GRU(input_size=64, hidden_size=64, num_layers=1, batch_first=True, bidirectional=True)
         self.gru2 = nn.GRU(input_size=128, hidden_size=64, num_layers=1, batch_first=True, bidirectional=True)
-        self.l0 = nn.LazyLinear(64)
-        self.relu1 = nn.ReLU()
+        # self.l0 = nn.LazyLinear(64)
+        # self.relu1 = nn.ReLU()
         self.l1 = nn.LazyLinear(PreLen*PreNum)
         
 
@@ -221,8 +221,8 @@ class SeEANet(nn.Module):
         x,_ = self.gru1(x)
         x,_ = self.gru2(x)
         x = x[:, -1, :]
-        x = self.l0(x)
-        x = self.relu1(x)
+        # x = self.l0(x)
+        # x = self.relu1(x)
         x = self.l1(x)
 
 

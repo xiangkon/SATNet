@@ -22,6 +22,7 @@ import json
 
 def train_func(epochs=2000,modelName="SAT", train_num=5,
     data_Dir="/home/admin123/SATData/data",
+    save_Dir = "nn",
     peopleList=['S01'], exp_class="MJ",
     cluster_num=6, fusionMethod="PCA", 
     windowLength=256, stepLength=1, delta_T=20, train_ratio=0.8, PreNum=3,
@@ -49,7 +50,7 @@ def train_func(epochs=2000,modelName="SAT", train_num=5,
 
     rmse, mae, r2 = [[] for _ in range(train_num)], [[] for _ in range(train_num)], [[] for _ in range(train_num)]
     
-    checkpoint_save_Dir = os.path.join("/home/admin123/SATData", "Run", modelName, formatted_time,f"{exp_class}_{fusionMethod}_{delta_T}_{windowLength}")
+    checkpoint_save_Dir = os.path.join(save_Dir, modelName, formatted_time,f"{exp_class}_{fusionMethod}_{delta_T}_{windowLength}")
     make_dir(checkpoint_save_Dir)
 
     for train_index in range(train_num):

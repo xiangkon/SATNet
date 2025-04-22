@@ -139,3 +139,47 @@ def make_datasets(data_Dir, peopleList, exp_class, cluster_num, fusionMethod, wi
     
     return emg, angle, afterClusterEmgIndex
 
+
+def NormalizedArray(arr):
+    arr_normalized = (arr - arr.min(axis=0)) / (arr.max(axis=0) - arr.min(axis=0))
+    return arr_normalized
+
+def returnIndex(array):
+     # 计算每一行的和
+    row_sums = np.sum(array, axis=1)
+    # 按照行和对原数组进行排序
+    # 使用 argsort 获取行和的排序索引
+    sorted_indices = np.argsort(row_sums)
+    return sorted_indices
+
+def calMeans(rmse, mae, r2, allFlag=True):
+    if allFlag:
+        sumArray = NormalizedArray(rmse) + NormalizedArray(mae) - NormalizedArray(r2)
+
+        sorted_indices = returnIndex(sumArray)
+        sorted_mae = mae[sorted_indices]
+        sorted_rmse = rmse[sorted_indices]
+        sorted_r2 = r2[sorted_indices]
+    else:
+        sorted_mae = mae[returnIndex(mae)]
+        sorted_rmse = rmse[returnIndex(rmse)]
+        sorted_r2 = r2[returnIndex(r2)]
+
+
+    if len(rmse) > 6:
+        T = 3
+    else:
+        T = 1
+    rmse_new, mae_new, r2_new = np.mean(sorted_rmse[T:-T], axis=0), np.mean(sorted_mae[T:-T], axis=0), np.mean(sorted_r2[T:-T], axis=0)
+    return rmse_new, mae_new, r2_new
+
+
+# 自定义排序函数：提取倒数第二个数字
+def sort_key(folder_name):
+    # 假设文件夹名称格式为 MJ_PCA_1_256，提取倒数第二个数字
+    parts = folder_name.split('_')  # 按下划线分割
+    if len(parts) >= 2 and parts[-2].isdigit():  # 确保倒数第二个部分是数字
+        delta_Tlist.append(int(parts[-2]))
+        return int(parts[-2])  # 返回倒数第二个数字作为排序键
+    else:
+        return float('inf')  # 如果不符合格式，放在最后

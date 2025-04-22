@@ -39,7 +39,7 @@ def train_func(epochs=2000,modelName="SAT", train_num=5,
     
     semgData = torch.tensor(emg_data, dtype=torch.float32)
     angleData = torch.tensor(angle_data, dtype=torch.float32)
-    print(f"训练参数：网络：{modelName}, 簇:{cluster_num}, 间隔时间: {delta_T}, 数据融合算法: {fusionMethod}")
+    print(f"训练参数：网络：{modelName}, 簇:{cluster_num}, 间隔时间: {delta_T}, 数据融合算法: {fusionMethod}, 窗口大小：{windowLength}")
     print("semg 数据形状为：", semgData.shape)
     print("angle 数据形状为：", angleData.shape)
     dataset = TensorDataset(semgData, angleData)

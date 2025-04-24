@@ -4,6 +4,7 @@ import pandas as pd
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from scipy.spatial.distance import squareform
 from utils.dataFusionMethod import *
+import matplotlib.pyplot as plt
 
 # 建立文件夹
 def make_dir(dir):
@@ -174,12 +175,17 @@ def calMeans(rmse, mae, r2, allFlag=True):
     return rmse_new, mae_new, r2_new
 
 
-# 自定义排序函数：提取倒数第二个数字
-def sort_key(folder_name):
-    # 假设文件夹名称格式为 MJ_PCA_1_256，提取倒数第二个数字
-    parts = folder_name.split('_')  # 按下划线分割
-    if len(parts) >= 2 and parts[-2].isdigit():  # 确保倒数第二个部分是数字
-        delta_Tlist.append(int(parts[-2]))
-        return int(parts[-2])  # 返回倒数第二个数字作为排序键
-    else:
-        return float('inf')  # 如果不符合格式，放在最后
+def plot_func(save_Dir, mean_Value, Xlist, Xlabel, Ylabel="value", Xleft=0, Xright=256, name="RMSE.png"):
+
+    plt.figure()
+    png_path = os.path.join(save_Dir, name)
+    plt.plot(Xlist, mean_Value[:,0], marker='o', linestyle='-', label='elv_angle')  # 线条和点
+    plt.plot(Xlist, mean_Value[:,1], marker='o', linestyle='-', label='shoulder_elv')  # 线条和点
+    plt.plot(Xlist, mean_Value[:,2], marker='o', linestyle='-', label='elbow_flexion')  # 线条和点
+    plt.xlabel(Xlabel)
+    plt.ylabel(Ylabel)
+    plt.grid()
+    plt.legend()
+    plt.title("RMSE")
+    plt.xlim(Xleft, Xright)
+    plt.savefig(png_path, dpi=300, bbox_inches='tight') 

@@ -50,7 +50,7 @@ def train_func(epochs=2000,modelName="SAT", train_num=5,
 
     rmse, mae, r2 = [[] for _ in range(train_num)], [[] for _ in range(train_num)], [[] for _ in range(train_num)]
     
-    checkpoint_save_Dir = os.path.join(save_Dir, modelName, formatted_time,f"{exp_class}_{fusionMethod}_{delta_T}_{windowLength}")
+    checkpoint_save_Dir = os.path.join(save_Dir, modelName, formatted_time,f"{exp_class}_{fusionMethod}_{delta_T}_{windowLength}_{cluster_num}")
     make_dir(checkpoint_save_Dir)
 
     for train_index in range(train_num):
@@ -62,16 +62,16 @@ def train_func(epochs=2000,modelName="SAT", train_num=5,
         train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
         test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
-        if emg_data.shape[1] == 6:
+        if modelName != "SAT_N":
             # 初始化模型、优化器和损失函数
             if modelName == "SAT":
-                model = SATNet(PreNum)
+                model = SATNet(PreNum, cluster_num=cluster_num)
             elif modelName == "SeEANet":
-                model = SeEANet(PreNum)
+                model = SeEANet(PreNum, cluster_num=cluster_num)
             elif modelName == "MyoNet":
-                model = MyoNet(PreNum)
+                model = MyoNet(PreNum, cluster_num=cluster_num)
             elif modelName == "SAT_E":
-                model = SATNet_E(PreNum)
+                model = SATNet_E(PreNum, cluster_num=cluster_num)
         else:
             model = SATNet_N(PreNum, IndexL=afterClusterEmgIndex)
 

@@ -123,7 +123,7 @@ class SATNet(nn.Module):
         firstFilter = 8
         inceptionFilter = cluster_num * firstFilter
         self.FirConv = FirstConvBlk(outch=firstFilter, cluster_num=cluster_num)
-        self.InceptionBlk1 = InceptionBlk(inch=inceptionFilter, outch=int(inceptionFilter/4))
+        self.InceptionBlk1 = InceptionBlk(inch=inceptionFilter, outch=int(self.scale/4))
         self.lrelu1 = nn.LeakyReLU(negative_slope=0.3)
         self.transformer = TransformerTimeSeries(inceptionFilter, model_dim=64, dropout=0, output_channel=PreNum*PreLen)
 

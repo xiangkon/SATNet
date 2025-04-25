@@ -149,11 +149,11 @@ def train_func(epochs=2000,modelName="SAT", train_num=5,
         # 初始化模型结构
         # 初始化模型、优化器和损失函数
         if modelName == "SAT":
-            model_eval = SATNet(PreNum)
+            model_eval = SATNet(PreNum, cluster_num=cluster_num)
         elif modelName == "SeEANet":
-            model_eval = SeEANet(PreNum)
+            model_eval = SeEANet(PreNum, cluster_num=cluster_num)
         elif modelName == "MyoNet":
-            model_eval = MyoNet(PreNum)
+            model_eval = MyoNet(PreNum, cluster_num=cluster_num)
 
         model_eval.load_state_dict(torch.load(checkpoint_save_path))
 

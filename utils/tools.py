@@ -3,8 +3,58 @@ import numpy as np
 import pandas as pd
 from scipy.cluster.hierarchy import linkage, dendrogram, fcluster
 from scipy.spatial.distance import squareform
-from utils.dataFusionMethod import *
 import matplotlib.pyplot as plt
+
+from sklearn.decomposition import KernelPCA, PCA
+from sklearn.preprocessing import StandardScaler
+import numpy as np
+
+# KPCA 算法实现
+def KPCA_func(data):
+    # 标准化数据
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(data)
+
+    # 初始化KPCA
+    kpca = KernelPCA(n_components=1, kernel='rbf', gamma=15)
+
+    # 应用KPCA
+    X_kpca = kpca.fit_transform(X_scaled)
+    return X_kpca
+
+def PCA_func(data):
+    # 标准化数据
+    scaler = StandardScaler()
+    X_std = scaler.fit_transform(data)
+
+    # 初始化PCA
+    pca = PCA(n_components=1)
+    X_pca = pca.fit_transform(X_std)
+    return X_pca
+
+def WA_func(data):
+    # 计算协方差矩阵
+    data_T = data.T
+    covMatrix = calCovMatrix(data_T)
+
+    # 计算相关系数
+    correlationMatrix = calCorrelationMatrix(covMatrix)
+    row_sums = np.sum(correlationMatrix, axis=1)
+    weights = (row_sums)/(np.sum(row_sums))
+    data_out = np.matmul(data, weights)
+    return data_out.reshape(-1, 1)
+
+
+def EVA_func(data):
+    # 计算协方差矩阵
+    data_T = data.T
+    covMatrix = calCovMatrix(data_T)
+
+    # 计算相关系数
+    correlationMatrix = calCorrelationMatrix(covMatrix)
+    row_sums = np.sum(correlationMatrix, axis=1)
+    max_index = np.argmax(row_sums)
+    return data[:,max_index].reshape(-1, 1)
 
 # 建立文件夹
 def make_dir(dir):
@@ -52,7 +102,7 @@ def clusterMethod(cluster_num, correlationMatrix):
 
 
 # 制作数据集
-def make_datasets(data_Dir, peopleList, exp_class, cluster_num, fusionMethod, windowLength, stepLength, delta_T):
+def make_datasets(data_Dir, peopleList, exp_class, cluster_num, fusionMethod, windowLength, stepLength, delta_T, motionL):
     allEmgData = []
     allAngleData = []
     dataSegFlags = []
@@ -66,7 +116,7 @@ def make_datasets(data_Dir, peopleList, exp_class, cluster_num, fusionMethod, wi
             emgDataArray = pd.read_csv(emgDataPath).to_numpy()
             angleDataArray = pd.read_csv(angleDataPath).to_numpy()
             emgDataArray = emgDataArray[:,1:]
-            angleDataArray = angleDataArray[:,[1,2,4]]*180/np.pi
+            angleDataArray = angleDataArray[:,motionL]*180/np.pi
             allEmgData.append(emgDataArray)
             allAngleData.append(angleDataArray)
             dataSegFlags.append(len(emgDataArray))
@@ -100,14 +150,20 @@ def make_datasets(data_Dir, peopleList, exp_class, cluster_num, fusionMethod, wi
         mergedEmgData = []
         for i in afterClusterEmgIndex:
             subEmgData = final_emg_data[:,np.array(i)-1]
-            if fusionMethod == "KPCA":
-                subMergedEmgData = KPCA_func(subEmgData)
 
-            elif fusionMethod == "PCA":
-                subMergedEmgData = PCA_func(subEmgData)
+            if len(np.array(i)) != 1:
+                if fusionMethod == "KPCA":
+                    subMergedEmgData = KPCA_func(subEmgData)
 
-            elif fusionMethod == "WA":
-                subMergedEmgData = WA_func(subEmgData)
+                elif fusionMethod == "PCA":
+                    subMergedEmgData = PCA_func(subEmgData)
+
+                elif fusionMethod == "WA":
+                    subMergedEmgData = WA_func(subEmgData)
+                elif fusionMethod == "EVA":
+                    subMergedEmgData = EVA_func(subEmgData)
+            else:
+                subMergedEmgData = subEmgData
             
             mergedEmgData.append(subMergedEmgData)
         finalMergedEmgData = np.concatenate(mergedEmgData, axis=1)
@@ -153,7 +209,7 @@ def returnIndex(array):
     sorted_indices = np.argsort(row_sums)
     return sorted_indices
 
-def calMeans(rmse, mae, r2, allFlag=True):
+def calMeans(rmse, mae, r2, allFlag=True, thor=2):
     if allFlag:
         sumArray = NormalizedArray(rmse) + NormalizedArray(mae) - NormalizedArray(r2)
 
@@ -168,10 +224,10 @@ def calMeans(rmse, mae, r2, allFlag=True):
 
 
     if len(rmse) > 6:
-        T = 3
+        T = thor
     else:
         T = 1
-    rmse_new, mae_new, r2_new = np.mean(sorted_rmse[T:-T], axis=0), np.mean(sorted_mae[T:-T], axis=0), np.mean(sorted_r2[T:-T], axis=0)
+    rmse_new, mae_new, r2_new = np.mean(sorted_rmse[:-T], axis=0), np.mean(sorted_mae[:-T], axis=0), np.mean(sorted_r2[:-T], axis=0)
     return rmse_new, mae_new, r2_new
 
 
@@ -186,6 +242,22 @@ def plot_func(save_Dir, mean_Value, Xlist, Xlabel, Ylabel="value", Xleft=0, Xrig
     plt.ylabel(Ylabel)
     plt.grid()
     plt.legend()
+    plt.title(name[:-4])
+    plt.xlim(Xleft, Xright)
+    plt.savefig(png_path, dpi=300, bbox_inches='tight') 
+
+def plot_func_ticks(save_Dir, mean_Value, Xlist, Xlabel, x_ticks, Ylabel="value", Xleft=0, Xright=256, name="RMSE.png"):
+
+    plt.figure()
+    png_path = os.path.join(save_Dir, name)
+    plt.plot(Xlist, mean_Value[:,0], marker='o', linestyle='-', label='elv_angle')  # 线条和点
+    plt.plot(Xlist, mean_Value[:,1], marker='o', linestyle='-', label='shoulder_elv')  # 线条和点
+    plt.plot(Xlist, mean_Value[:,2], marker='o', linestyle='-', label='elbow_flexion')  # 线条和点
+    plt.xlabel(Xlabel)
+    plt.ylabel(Ylabel)
+    plt.grid()
+    plt.legend()
     plt.title("RMSE")
     plt.xlim(Xleft, Xright)
+    plt.xticks(ticks=Xlist, labels=x_ticks)  # 设置 x 轴刻度标签
     plt.savefig(png_path, dpi=300, bbox_inches='tight') 

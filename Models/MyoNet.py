@@ -54,9 +54,11 @@ class MyoNet(nn.Module):
          return x
 
 if __name__ == '__main__':
-    model = MyoNet(PreNum=3)
+    cluster_num = 6
+    model = MyoNet(PreNum=3, cluster_num=cluster_num)
     model = model.cuda()
     inputs = torch.randn(24, 6, 256)
     inputs = inputs.cuda()
     outputs = model(inputs)
+    summary(model, input_size=(cluster_num, 256))
     print("outpus's shape :", outputs.shape)

@@ -125,7 +125,7 @@ class SATNet(nn.Module):
         self.FirConv = FirstConvBlk(outch=firstFilter, cluster_num=cluster_num)
         self.InceptionBlk1 = InceptionBlk(inch=inceptionFilter, outch=int(self.scale/4))
         self.lrelu1 = nn.LeakyReLU(negative_slope=0.3)
-        self.transformer = TransformerTimeSeries(inceptionFilter, model_dim=64, dropout=0, output_channel=PreNum*PreLen)
+        self.transformer = TransformerTimeSeries(input_dim=self.scale, model_dim=64, dropout=0, output_channel=PreNum*PreLen)
 
         
 
@@ -139,9 +139,10 @@ class SATNet(nn.Module):
         return x
     
 if __name__ == '__main__':
-    model = SATNet(PreNum=3)
+    cluster_num = 2
+    model = SATNet(PreNum=3, cluster_num=cluster_num)
     model = model.cuda()
-    inputs = torch.randn(24, 6, 256)
+    inputs = torch.randn(24, cluster_num, 256)
     inputs = inputs.cuda()
     outputs = model(inputs)
     print("outpus's shape :", outputs.shape)

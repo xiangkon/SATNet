@@ -229,10 +229,11 @@ class SeEANet(nn.Module):
         return x
     
 if __name__ == '__main__':
-    model = SeEANet()
+    cluster_num = 12
+    model = SeEANet(cluster_num=cluster_num)
     model = model.cuda()
-    inputs = torch.randn(24, 6, 256)
+    inputs = torch.randn(24, cluster_num, 256)
     inputs = inputs.cuda()
-    # summary(model, input_size=(6, 256))
+    summary(model, input_size=(cluster_num, 256))
     outputs = model(inputs)
     print("outpus's shape :", outputs.shape)

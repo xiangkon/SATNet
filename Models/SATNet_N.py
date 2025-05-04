@@ -48,13 +48,12 @@ class InceptionBlk(nn.Module):
 
 class NNWA(nn.Module):
     def __init__(self, IndexL):
-        super(NNWA, self).__init__()  
-        self.l1 = nn.LazyLinear(1)
-        self.l2 = nn.LazyLinear(1)
-        self.l3 = nn.LazyLinear(1)
-        self.l4 = nn.LazyLinear(1)
-        self.l5 = nn.LazyLinear(1)
-        self.l6 = nn.LazyLinear(1)
+        super(NNWA, self).__init__()
+        self.LL = nn.ModuleList()  # 使用 ModuleList 来管理层
+        for i in range(len(IndexL)):
+            if len(IndexL[i]) != 1:
+                self.LL.append(nn.LazyLinear(1))  
+
         modified_list = []
         for row in IndexL:
             new_row = [value - 1 for value in row]
@@ -62,22 +61,24 @@ class NNWA(nn.Module):
 
         self.IndexL = modified_list
 
-    def forward(self,x):
-        x1 = x[:, :, self.IndexL[0]]
-        x2 = x[:, :, self.IndexL[1]]
-        x3 = x[:, :, self.IndexL[2]]
-        x4 = x[:, :, self.IndexL[3]]
-        x5 = x[:, :, self.IndexL[4]]
-        x6 = x[:, :, self.IndexL[5]]
+    def forward(self, x):
+        x = x.permute(0, 2, 1)
+        device = x.device  # 获取输入所在的设备
+        xL = []
+        for i in range(len(self.IndexL)):
+            xL.append(x[:, :, self.IndexL[i]].to(device))
 
-        x1 = self.l1(x1)
-        x2 = self.l2(x2)
-        x3 = self.l3(x3)
-        x4 = self.l4(x4)
-        x5 = self.l5(x5)
-        x6 = self.l6(x6)
-
-        x = torch.cat([x1, x2, x3, x4, x5, x6], dim=2)
+        xList = []
+        x = xL
+        k = 0
+        for i in range(len(self.IndexL)):
+            if len(self.IndexL[i]) != 1:
+                xList.append(self.LL[k](x[i]))
+                k += 1
+            else:
+                xList.append(x[i])
+            
+        x = torch.cat(xList, dim=2)
         return x.permute(0,2,1)
 
 
@@ -157,9 +158,9 @@ class SATNet_N(nn.Module):
         inceptionFilter = cluster_num * firstFilter
         self.nnwa = NNWA(IndexL)
         self.FirConv = FirstConvBlk(outch=firstFilter, cluster_num=cluster_num)
-        self.InceptionBlk1 = InceptionBlk(inch=inceptionFilter, outch=int(inceptionFilter/4))
+        self.InceptionBlk1 = InceptionBlk(inch=inceptionFilter, outch=int(self.scale/4))
         self.lrelu1 = nn.LeakyReLU(negative_slope=0.3)
-        self.transformer = TransformerTimeSeries(inceptionFilter, model_dim=64, dropout=0, output_channel=PreNum*PreLen)
+        self.transformer = TransformerTimeSeries(self.scale, model_dim=64, dropout=0, output_channel=PreNum*PreLen)
 
         
 
